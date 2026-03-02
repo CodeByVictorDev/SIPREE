@@ -1,0 +1,21 @@
+{
+  "name": "sipree",
+  "version": "1.0.0",
+  "description": "��#\u0000 \u0000S\u0000I\u0000P\u0000R\u0000E\u0000E\u0000\r\u0000 \u0000",
+  "main": "Script.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ZeRiZzoR/SIPREE.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/ZeRiZzoR/SIPREE/issues"
+  },
+  "homepage": "https://github.com/ZeRiZzoR/SIPREE#readme"
+}

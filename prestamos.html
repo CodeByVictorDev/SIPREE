@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Préstamos</title>
+    <link rel="stylesheet" href="Style.css">
+    <button onclick="inicio()">Volver al inicio</button>
+
+</head>
+<body>
+    <h2>Préstamos de alumnos</h2>
+
+    <section>
+        <h3>Registrar nuevo préstamo</h3>
+        <form id="formPrestamo">
+            <label>
+                Nombre del alumno
+                <input type="text" id="nombreAlumno" required>
+            </label>
+            <br>
+            <label>
+                Matrícula
+                <input type="text" id="matricula" required>
+            </label>
+            <br>
+            <label>
+                Equipo a prestar
+                <select id="equipoSeleccionado" required>
+                    <option value="">Selecciona un equipo disponible</option>
+                </select>
+            </label>
+            <br>
+            <button type="submit">Registrar préstamo</button>
+        </form>
+    </section>
+
+    <section>
+        <h3>Lista de préstamos</h3>
+        <table>
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Matrícula</th>
+                    <th>Equipo</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaPrestamos"></tbody>
+        </table>
+    </section>
+
+    <script src="Script.js"></script>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { 
+            getAuth, 
+            onAuthStateChanged 
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            onSnapshot,
+            doc,
+            updateDoc,
+            deleteDoc,
+            serverTimestamp,
+            query,
+            where
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqTAcwFRUIrM98F0st6Jgc4bv0Ifsl5G0",
+            authDomain: "simon-a08e7.firebaseapp.com",
+            projectId: "simon-a08e7",
+            storageBucket: "simon-a08e7.firebasestorage.app",
+            messagingSenderId: "268766570742",
+            appId: "1:268766570742:web:361d8413bb37b308e2e4d7",
+            measurementId: "G-1BYVZJNX3T"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const formPrestamo = document.getElementById("formPrestamo");
+        const tablaPrestamos = document.getElementById("tablaPrestamos");
+        const selectEquipo = document.getElementById("equipoSeleccionado");
+
+        let usuarioActual = null;
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "Login.html";
+                return;
+            }
+            usuarioActual = user;
+            escucharPrestamos();
+            escucharEquiposDisponibles();
+        });
+
+        formPrestamo.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (!usuarioActual) return;
+
+            const nombre = document.getElementById("nombreAlumno").value.trim();
+            const matricula = document.getElementById("matricula").value.trim();
+            const equipoId = selectEquipo.value;
+            const equipoTexto = selectEquipo.options[selectEquipo.selectedIndex]?.textContent || "";
+
+            if (!nombre || !matricula || !equipoId) {
+                alert("Completa todos los campos.");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "prestamos"), {
+                    nombre,
+                    matricula,
+                    equipoId,
+                    equipo: equipoTexto,
+                    estado: "Prestado",
+                    creadoPor: usuarioActual.uid,
+                    creadoEn: serverTimestamp()
+                });
+
+                // Marcar el equipo como prestado en la colección de equipos
+                await updateDoc(doc(db, "equipos", equipoId), { estado: "prestado" });
+
+                formPrestamo.reset();
+            } catch (error) {
+                console.error(error);
+                alert("Error al registrar el préstamo.");
+            }
+        });
+
+        // Escuchar lista de préstamos en tiempo real
+        function escucharPrestamos() {
+            onSnapshot(collection(db, "prestamos"), (snapshot) => {
+                tablaPrestamos.innerHTML = "";
+
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const tr = document.createElement("tr");
+
+                    const esPrestado = data.estado === "Prestado";
+                    const claseEstado = esPrestado ? "estado-prestado" : "estado-libre";
+                    const textoEstado = data.estado || "Libre";
+
+                    tr.innerHTML = `
+                        <td>${data.nombre || ""}</td>
+                        <td>${data.matricula || ""}</td>
+                        <td>${data.equipo || ""}</td>
+                        <td>
+                            <span class="estado-label ${claseEstado}">
+                                ${textoEstado}
+                            </span>
+                        </td>
+                        <td>
+                            <button data-accion="toggle" data-id="${docSnap.id}" data-equipo-id="${data.equipoId || ""}">
+                                Cambiar estado
+                            </button>
+                            <button data-accion="eliminar" data-id="${docSnap.id}" data-equipo-id="${data.equipoId || ""}">
+                                Eliminar
+                            </button>
+                        </td>
+                    `;
+
+                    tablaPrestamos.appendChild(tr);
+                });
+            });
+        }
+
+        // Escuchar equipos disponibles (estado = disponible) para llenar el select
+        function escucharEquiposDisponibles() {
+            const q = query(
+                collection(db, "equipos"),
+                where("estado", "==", "disponible")
+            );
+
+            onSnapshot(q, (snapshot) => {
+                selectEquipo.innerHTML = '<option value="">Selecciona un equipo disponible</option>';
+
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const option = document.createElement("option");
+                    option.value = docSnap.id;
+                    option.textContent = `${data.nombre || "Sin nombre"} (${data.codigo || ""})`;
+                    selectEquipo.appendChild(option);
+                });
+            });
+        }
+
+        // Botones de la tabla: cambiar estado (Prestado/Libre) y eliminar
+        tablaPrestamos.addEventListener("click", async (e) => {
+            const btn = e.target.closest("button");
+            if (!btn) return;
+
+            const id = btn.getAttribute("data-id");
+            const accion = btn.getAttribute("data-accion");
+            const ref = doc(db, "prestamos", id);
+            const equipoId = btn.getAttribute("data-equipo-id");
+
+            try {
+                if (accion === "toggle") {
+                    const fila = btn.closest("tr");
+                    const spanEstado = fila.querySelector(".estado-label");
+                    const estadoActual = spanEstado.textContent.trim();
+                    const nuevoEstado = estadoActual === "Prestado" ? "Libre" : "Prestado";
+                    await updateDoc(ref, { estado: nuevoEstado });
+
+                    // Sincronizar estado del equipo relacionado
+                    if (equipoId) {
+                        const nuevoEstadoEquipo = nuevoEstado === "Prestado" ? "prestado" : "disponible";
+                        await updateDoc(doc(db, "equipos", equipoId), { estado: nuevoEstadoEquipo });
+                    }
+                } else if (accion === "eliminar") {
+                    if (confirm("¿Seguro que deseas eliminar este préstamo?")) {
+                        await deleteDoc(ref);
+
+                        // Al eliminar el préstamo, liberar el equipo
+                        if (equipoId) {
+                            await updateDoc(doc(db, "equipos", equipoId), { estado: "disponible" });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error al actualizar el préstamo.");
+            }
+        });
+    </script>
+</body>
+</html>

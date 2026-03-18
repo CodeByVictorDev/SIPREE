@@ -1,4 +1,4 @@
-// src/pages/Inventario.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -13,25 +13,17 @@ import {
     serverTimestamp
 } from 'firebase/firestore';
 import { app } from '../firebaseConfig';
-
 function Inventario() {
-    const navigate = useNavigate();
-
-    // "Variables de estado" de React. Sustituyen a variables let y actualizan la vista
+    const navigate = useNavigate();
     const [usuarioActual, setUsuarioActual] = useState(null);
-    const [equipos, setEquipos] = useState([]);
-
-    // Estados para los campos (inputs)
+    const [equipos, setEquipos] = useState([]);
     const [nombre, setNombre] = useState('');
     const [categoria, setCategoria] = useState('');
     const [codigo, setCodigo] = useState('');
     const [descripcion, setDescripcion] = useState('');
-
     const auth = getAuth(app);
     const db = getFirestore(app);
-
-    useEffect(() => {
-        // Escuchador de quién entró
+    useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             if (!user) {
                 navigate('/login');
@@ -41,35 +33,26 @@ function Inventario() {
         });
         return () => unsubscribeAuth();
     }, [auth, navigate]);
-
     useEffect(() => {
-        if (!usuarioActual) return;
-
-        // Nos conectamos a Firestore para traer la lista de equipos en tiempo real
+        if (!usuarioActual) return;
         const unsubscribeEquipos = onSnapshot(collection(db, 'equipos'), (snapshot) => {
             const lista = [];
             snapshot.forEach((docSnap) => {
                 lista.push({ id: docSnap.id, ...docSnap.data() });
-            });
-            // Guardamos la lista en el estado
+            });
             setEquipos(lista);
-        });
-
-        // Esta función clean-up asegura que no nos llenemos de eventos repetidos
+        });
         return () => {
             unsubscribeEquipos();
         };
     }, [usuarioActual, db]);
-
     const guardarEquipo = async (e) => {
         e.preventDefault(); // Evitamos recargar la página
-
         if (!usuarioActual) return;
         if (!nombre || !categoria || !codigo) {
             alert("Completa todos los campos obligatorios.");
             return;
         }
-
         try {
             await addDoc(collection(db, "equipos"), {
                 nombre,
@@ -79,9 +62,7 @@ function Inventario() {
                 estado: "disponible",
                 creadoPor: usuarioActual.uid,
                 creadoEn: serverTimestamp()
-            });
-
-            // Vaciamos los inputs (en vez de usar form.reset())
+            });
             setNombre('');
             setCategoria('');
             setCodigo('');
@@ -91,7 +72,6 @@ function Inventario() {
             alert("Error al guardar el equipo.");
         }
     };
-
     const cambiarEstado = async (equipo) => {
         const nuevoEstado = equipo.estado === "disponible" ? "prestado" : "disponible";
         const ref = doc(db, "equipos", equipo.id);
@@ -102,7 +82,6 @@ function Inventario() {
             alert("Error al actualizar el equipo.");
         }
     };
-
     const eliminarEquipo = async (id) => {
         if (window.confirm("¿Seguro que deseas eliminar este equipo?")) {
             try {
@@ -113,12 +92,10 @@ function Inventario() {
             }
         }
     };
-
     return (
         <div>
             <h2>Inventario de equipos</h2>
             <button onClick={() => navigate('/')}>Volver al inicio</button>
-
             <section>
                 <h3>Registrar nuevo equipo</h3>
                 {/* Aquí pasamos nuestra función al evento de envío */}
@@ -166,7 +143,6 @@ function Inventario() {
                     <button type="submit">Guardar equipo</button>
                 </form>
             </section>
-
             <section>
                 <h3>Listado de equipos</h3>
                 <table border="1" cellPadding="4" cellSpacing="0">
@@ -203,5 +179,4 @@ function Inventario() {
         </div>
     );
 }
-
 export default Inventario;

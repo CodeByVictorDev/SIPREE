@@ -1,4 +1,4 @@
-// src/pages/Prestamos.jsx
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -15,24 +15,17 @@ import {
     where
 } from 'firebase/firestore';
 import { app } from '../firebaseConfig';
-
 function Prestamos() {
-    const navigate = useNavigate();
-
-    // Estados
+    const navigate = useNavigate();
     const [usuarioActual, setUsuarioActual] = useState(null);
     const [prestamosList, setPrestamosList] = useState([]);
     const [equiposDisponibles, setEquiposDisponibles] = useState([]);
-
     const [nombreAlumno, setNombreAlumno] = useState('');
     const [matricula, setMatricula] = useState('');
     const [equipoId, setEquipoId] = useState('');
-
     const auth = getAuth(app);
     const db = getFirestore(app);
-
-    useEffect(() => {
-        // Escuchador de quién entró
+    useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
             if (!user) {
                 navigate('/login');
@@ -42,20 +35,15 @@ function Prestamos() {
         });
         return () => unsubscribeAuth();
     }, [auth, navigate]);
-
     useEffect(() => {
-        if (!usuarioActual) return;
-
-        // Traemos los préstamos que existen
+        if (!usuarioActual) return;
         const unsubscribePrestamos = onSnapshot(collection(db, 'prestamos'), (snapshot) => {
             const lista = [];
             snapshot.forEach((docSnap) => {
                 lista.push({ id: docSnap.id, ...docSnap.data() });
             });
             setPrestamosList(lista);
-        });
-
-        // Traemos solo los equipos cuyo status sea "disponible" para nuestro `<select>`
+        });
         const q = query(collection(db, "equipos"), where("estado", "==", "disponible"));
         const unsubscribeEquipos = onSnapshot(q, (snapshot) => {
             const lista = [];
@@ -64,26 +52,20 @@ function Prestamos() {
             });
             setEquiposDisponibles(lista);
         });
-
         return () => {
             unsubscribePrestamos();
             unsubscribeEquipos();
         };
     }, [usuarioActual, db]);
-
     const registrarPrestamo = async (e) => {
         e.preventDefault();
         if (!usuarioActual) return;
-
         if (!nombreAlumno || !matricula || !equipoId) {
             alert("Completa todos los campos.");
             return;
-        }
-
-        // Buscamos el equipo seleccionado en nuestra lista para extraer su nombre y código
+        }
         const equipoEncontrado = equiposDisponibles.find(eq => eq.id === equipoId);
         const equipoTexto = equipoEncontrado ? `${equipoEncontrado.nombre} (${equipoEncontrado.codigo})` : "";
-
         try {
             await addDoc(collection(db, "prestamos"), {
                 nombre: nombreAlumno,
@@ -93,12 +75,8 @@ function Prestamos() {
                 estado: "Prestado",
                 creadoPor: usuarioActual.uid,
                 creadoEn: serverTimestamp()
-            });
-
-            // Actualizamos el equipo y le decimos que ahora está prestado
-            await updateDoc(doc(db, "equipos", equipoId), { estado: "prestado" });
-
-            // Reseteamos valores
+            });
+            await updateDoc(doc(db, "equipos", equipoId), { estado: "prestado" });
             setNombreAlumno('');
             setMatricula('');
             setEquipoId('');
@@ -107,15 +85,11 @@ function Prestamos() {
             alert("Error al registrar el préstamo.");
         }
     };
-
     const cambiarEstado = async (prestamo) => {
         const nuevoEstado = prestamo.estado === "Prestado" ? "Libre" : "Prestado";
         const ref = doc(db, "prestamos", prestamo.id);
-
         try {
-            await updateDoc(ref, { estado: nuevoEstado });
-
-            // También arreglar el estado del equipo mismo
+            await updateDoc(ref, { estado: nuevoEstado });
             if (prestamo.equipoId) {
                 const nuevoEstadoEquipo = nuevoEstado === "Prestado" ? "prestado" : "disponible";
                 await updateDoc(doc(db, "equipos", prestamo.equipoId), { estado: nuevoEstadoEquipo });
@@ -125,13 +99,10 @@ function Prestamos() {
             alert("Error al cambiar estado.");
         }
     };
-
     const eliminarPrestamo = async (prestamo) => {
         if (window.confirm("¿Seguro que deseas eliminar este préstamo?")) {
             try {
-                await deleteDoc(doc(db, "prestamos", prestamo.id));
-
-                // Liberar el equipo
+                await deleteDoc(doc(db, "prestamos", prestamo.id));
                 if (prestamo.equipoId) {
                     await updateDoc(doc(db, "equipos", prestamo.equipoId), { estado: "disponible" });
                 }
@@ -141,12 +112,10 @@ function Prestamos() {
             }
         }
     };
-
     return (
         <div>
             <h2>Préstamos de alumnos</h2>
             <button onClick={() => navigate('/')}>Volver al inicio</button>
-
             <section>
                 <h3>Registrar nuevo préstamo</h3>
                 <form onSubmit={registrarPrestamo}>
@@ -189,7 +158,6 @@ function Prestamos() {
                     <button type="submit">Registrar préstamo</button>
                 </form>
             </section>
-
             <section>
                 <h3>Lista de préstamos</h3>
                 <table>
@@ -205,9 +173,7 @@ function Prestamos() {
                     <tbody>
                         {prestamosList.map((prestamo) => {
                             const esPrestado = prestamo.estado === "Prestado";
-                            const claseEstado = esPrestado ? "estado-prestado" : "estado-libre";
-
-                            // React necesita key para mostrar iteraciones dinámicas
+                            const claseEstado = esPrestado ? "estado-prestado" : "estado-libre";
                             return (
                                 <tr key={prestamo.id}>
                                     <td>{prestamo.nombre || ""}</td>
@@ -236,5 +202,4 @@ function Prestamos() {
         </div>
     );
 }
-
 export default Prestamos;

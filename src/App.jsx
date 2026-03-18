@@ -1,14 +1,11 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
-
-// Importamos las páginas (componentes que hacen de páginas)
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MenuPrincipal from './pages/MenuPrincipal';
 import Login from './pages/Login';
 import Inventario from './pages/Inventario';
 import Prestamos from './pages/Prestamos';
 import Admin from './pages/Admin';
 import Usuario from './pages/Usuario';
-
 function App() {
     return (
         <BrowserRouter>
@@ -24,5 +21,4 @@ function App() {
         </BrowserRouter>
     );
 }
-
 export default App;

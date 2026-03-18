@@ -10,45 +10,70 @@ import {
     doc,
     updateDoc,
     deleteDoc,
-    serverTimestamp
+    serverTimestamp,
+    getDoc
 } from 'firebase/firestore';
 import { app } from '../firebaseConfig';
+
+// En este componente diferenciamos entre:
+// - Admin: puede dar de alta equipos, cambiar estado y eliminar.
+// - Usuario: solo ve el inventario (especialmente cuáles están disponibles).
 function Inventario() {
-    const navigate = useNavigate();
+    const navigate = useNavigate();
+
     const [usuarioActual, setUsuarioActual] = useState(null);
-    const [equipos, setEquipos] = useState([]);
+    const [rol, setRol] = useState('usuario');
+    const [equipos, setEquipos] = useState([]);
     const [nombre, setNombre] = useState('');
     const [categoria, setCategoria] = useState('');
     const [codigo, setCodigo] = useState('');
     const [descripcion, setDescripcion] = useState('');
+
     const auth = getAuth(app);
     const db = getFirestore(app);
-    useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, (user) => {
+
+    // 1) Verificamos sesión y cargamos rol desde "usuarios"
+    useEffect(() => {
+        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (!user) {
                 navigate('/login');
             } else {
                 setUsuarioActual(user);
+                try {
+                    const ref = doc(db, "usuarios", user.uid);
+                    const snap = await getDoc(ref);
+                    const data = snap.data();
+                    setRol(data?.rol === 'admin' ? 'admin' : 'usuario');
+                } catch (e) {
+                    console.error(e);
+                    setRol('usuario');
+                }
             }
         });
         return () => unsubscribeAuth();
-    }, [auth, navigate]);
+    }, [auth, db, navigate]);
+
+    // 2) Cargamos todos los equipos (tanto para admin como usuario)
     useEffect(() => {
-        if (!usuarioActual) return;
+        if (!usuarioActual) return;
         const unsubscribeEquipos = onSnapshot(collection(db, 'equipos'), (snapshot) => {
             const lista = [];
             snapshot.forEach((docSnap) => {
                 lista.push({ id: docSnap.id, ...docSnap.data() });
-            });
+            });
             setEquipos(lista);
-        });
+        });
         return () => {
             unsubscribeEquipos();
         };
     }, [usuarioActual, db]);
+
+    const esAdmin = rol === 'admin';
+
+    // 3) Solo admin puede dar de alta
     const guardarEquipo = async (e) => {
-        e.preventDefault(); // Evitamos recargar la página
-        if (!usuarioActual) return;
+        e.preventDefault();
+        if (!usuarioActual || !esAdmin) return;
         if (!nombre || !categoria || !codigo) {
             alert("Completa todos los campos obligatorios.");
             return;
@@ -62,7 +87,7 @@ function Inventario() {
                 estado: "disponible",
                 creadoPor: usuarioActual.uid,
                 creadoEn: serverTimestamp()
-            });
+            });
             setNombre('');
             setCategoria('');
             setCodigo('');
@@ -72,7 +97,10 @@ function Inventario() {
             alert("Error al guardar el equipo.");
         }
     };
+
+    // 4) Solo admin puede cambiar estado y eliminar
     const cambiarEstado = async (equipo) => {
+        if (!esAdmin) return;
         const nuevoEstado = equipo.estado === "disponible" ? "prestado" : "disponible";
         const ref = doc(db, "equipos", equipo.id);
         try {
@@ -82,7 +110,9 @@ function Inventario() {
             alert("Error al actualizar el equipo.");
         }
     };
+
     const eliminarEquipo = async (id) => {
+        if (!esAdmin) return;
         if (window.confirm("¿Seguro que deseas eliminar este equipo?")) {
             try {
                 await deleteDoc(doc(db, "equipos", id));
@@ -92,57 +122,63 @@ function Inventario() {
             }
         }
     };
+
     return (
         <div>
-            <h2>Inventario de equipos</h2>
+            <h2>Inventario de equipos ({esAdmin ? "Vista administrador" : "Vista usuario"})</h2>
             <button onClick={() => navigate('/')}>Volver al inicio</button>
-            <section>
-                <h3>Registrar nuevo equipo</h3>
-                {/* Aquí pasamos nuestra función al evento de envío */}
-                <form onSubmit={guardarEquipo}>
-                    <label>
-                        Nombre del equipo
-                        <input
-                            type="text"
-                            value={nombre}
-                            onChange={(e) => setNombre(e.target.value)}
-                            required
-                        />
-                    </label>
-                    <br />
-                    <label>
-                        Categoría
-                        <input
-                            type="text"
-                            placeholder="Laptop, proyector, etc."
-                            value={categoria}
-                            onChange={(e) => setCategoria(e.target.value)}
-                            required
-                        />
-                    </label>
-                    <br />
-                    <label>
-                        Código / Número de serie
-                        <input
-                            type="text"
-                            value={codigo}
-                            onChange={(e) => setCodigo(e.target.value)}
-                            required
-                        />
-                    </label>
-                    <br />
-                    <label>
-                        Descripción
-                        <textarea
-                            rows="3"
-                            value={descripcion}
-                            onChange={(e) => setDescripcion(e.target.value)}
-                        />
-                    </label>
-                    <br />
-                    <button type="submit">Guardar equipo</button>
-                </form>
-            </section>
+
+            {/* Formulario solo visible para administradores */}
+            {esAdmin && (
+                <section>
+                    <h3>Registrar nuevo equipo</h3>
+                    <form onSubmit={guardarEquipo}>
+                        <label>
+                            Nombre del equipo
+                            <input
+                                type="text"
+                                value={nombre}
+                                onChange={(e) => setNombre(e.target.value)}
+                                required
+                            />
+                        </label>
+                        <br />
+                        <label>
+                            Categoría
+                            <input
+                                type="text"
+                                placeholder="Laptop, proyector, etc."
+                                value={categoria}
+                                onChange={(e) => setCategoria(e.target.value)}
+                                required
+                            />
+                        </label>
+                        <br />
+                        <label>
+                            Código / Número de serie
+                            <input
+                                type="text"
+                                value={codigo}
+                                onChange={(e) => setCodigo(e.target.value)}
+                                required
+                            />
+                        </label>
+                        <br />
+                        <label>
+                            Descripción
+                            <textarea
+                                rows="3"
+                                value={descripcion}
+                                onChange={(e) => setDescripcion(e.target.value)}
+                            />
+                        </label>
+                        <br />
+                        <button type="submit">Guardar equipo</button>
+                    </form>
+                </section>
+            )}
+
+            {/* Listado: todos pueden verlo, pero solo admin tiene botones de acción */}
             <section>
                 <h3>Listado de equipos</h3>
                 <table border="1" cellPadding="4" cellSpacing="0">
@@ -152,25 +188,28 @@ function Inventario() {
                             <th>Categoría</th>
                             <th>Código</th>
                             <th>Estado</th>
-                            <th>Acciones</th>
+                            {esAdmin && <th>Acciones</th>}
                         </tr>
                     </thead>
                     <tbody>
-                        {/* Recorremos nuestro array de equipos y creamos las filas */}
                         {equipos.map((equipo) => (
                             <tr key={equipo.id}>
                                 <td>{equipo.nombre || ""}</td>
                                 <td>{equipo.categoria || ""}</td>
                                 <td>{equipo.codigo || ""}</td>
                                 <td>{equipo.estado || ""}</td>
-                                <td>
-                                    <button onClick={() => cambiarEstado(equipo)}>
-                                        {equipo.estado === "disponible" ? "Marcar como prestado" : "Marcar como disponible"}
-                                    </button>
-                                    <button onClick={() => eliminarEquipo(equipo.id)}>
-                                        Eliminar
-                                    </button>
-                                </td>
+                                {esAdmin && (
+                                    <td>
+                                        <button onClick={() => cambiarEstado(equipo)}>
+                                            {equipo.estado === "disponible"
+                                                ? "Marcar como prestado"
+                                                : "Marcar como disponible"}
+                                        </button>
+                                        <button onClick={() => eliminarEquipo(equipo.id)}>
+                                            Eliminar
+                                        </button>
+                                    </td>
+                                )}
                             </tr>
                         ))}
                     </tbody>
@@ -179,4 +218,5 @@ function Inventario() {
         </div>
     );
 }
+
 export default Inventario;

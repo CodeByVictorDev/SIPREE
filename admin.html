@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <script src="https://t.contentsquare.net/uxa/9f551dce9065d.js"></script>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interfaz de administrador</title>
+    <link rel="stylesheet" href="Style.css">
+</head>
+<body>
+    <h2>Panel de administrador</h2>
+    <p>Desde aquí puedes gestionar el inventario completo y todos los préstamos.</p>
+
+    <section>
+        <h3>Acciones de administración</h3>
+        <button onclick="window.location.href='inventario.html'">Administrar inventario</button>
+        <button onclick="window.location.href='prestamos.html'">Administrar préstamos</button>
+        <button onclick="window.location.href='Index.html'">Volver al menú principal</button>
+    </section>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import { getFirestore, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqTAcwFRUIrM98F0st6Jgc4bv0Ifsl5G0",
+            authDomain: "simon-a08e7.firebaseapp.com",
+            projectId: "simon-a08e7",
+            storageBucket: "simon-a08e7.firebasestorage.app",
+            messagingSenderId: "268766570742",
+            appId: "1:268766570742:web:361d8413bb37b308e2e4d7",
+            measurementId: "G-1BYVZJNX3T"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        onAuthStateChanged(auth, async (user) => {
+            if (!user) {
+                window.location.href = "Login.html";
+                return;
+            }
+
+            try {
+                const ref = doc(db, "usuarios", user.uid);
+                const snap = await getDoc(ref);
+
+                const data = snap.data();
+                if (!data || data.rol !== "admin") {
+                    alert("No tienes permisos de administrador.");
+                    window.location.href = "usuario.html";
+                }
+            } catch (e) {
+                console.error(e);
+                alert("Error verificando permisos de administrador.");
+                window.location.href = "usuario.html";
+            }
+        });
+    </script>
+</body>
+</html>

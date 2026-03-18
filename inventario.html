@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inventario</title>
+    <link rel="stylesheet" href="Style.css">
+</head>
+
+<body>
+    <h2>Inventario de equipos</h2>
+    <button onclick="inicio()">Volver al inicio</button>
+    <script src="Script.js"></script>
+
+    <section>
+        <h3>Registrar nuevo equipo</h3>
+        <form id="formEquipo">
+            <label>
+                Nombre del equipo
+                <input type="text" id="nombre" required>
+            </label>
+            <br>
+            <label>
+                Categoría
+                <input type="text" id="categoria" placeholder="Laptop, proyector, etc." required>
+            </label>
+            <br>
+            <label>
+                Código / Número de serie
+                <input type="text" id="codigo" required>
+            </label>
+            <br>
+            <label>
+                Descripción
+                <textarea id="descripcion" rows="3"></textarea>
+            </label>
+            <br>
+            <button type="submit">Guardar equipo</button>
+        </form>
+    </section>
+
+    <section>
+        <h3>Listado de equipos</h3>
+        <table border="1" cellpadding="4" cellspacing="0">
+            <thead>
+                <tr>
+                    <th>Nombre</th>
+                    <th>Categoría</th>
+                    <th>Código</th>
+                    <th>Estado</th>
+                    <th>Acciones</th>
+                </tr>
+            </thead>
+            <tbody id="tablaEquipos"></tbody>
+        </table>
+    </section>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+        import {
+            getAuth,
+            onAuthStateChanged
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+        import {
+            getFirestore,
+            collection,
+            addDoc,
+            onSnapshot,
+            doc,
+            updateDoc,
+            deleteDoc,
+            serverTimestamp
+        } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAqTAcwFRUIrM98F0st6Jgc4bv0Ifsl5G0",
+            authDomain: "simon-a08e7.firebaseapp.com",
+            projectId: "simon-a08e7",
+            storageBucket: "simon-a08e7.firebasestorage.app",
+            messagingSenderId: "268766570742",
+            appId: "1:268766570742:web:361d8413bb37b308e2e4d7",
+            measurementId: "G-1BYVZJNX3T"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        const form = document.getElementById("formEquipo");
+        const tablaEquipos = document.getElementById("tablaEquipos");
+
+        let usuarioActual = null;
+        onAuthStateChanged(auth, (user) => {
+            if (!user) {
+                window.location.href = "Login.html";
+                return;
+            }
+            usuarioActual = user;
+            escucharEquipos();
+        });
+
+        form.addEventListener("submit", async (e) => {
+            e.preventDefault();
+            if (!usuarioActual) return;
+
+            const nombre = document.getElementById("nombre").value.trim();
+            const categoria = document.getElementById("categoria").value.trim();
+            const codigo = document.getElementById("codigo").value.trim();
+            const descripcion = document.getElementById("descripcion").value.trim();
+
+            if (!nombre || !categoria || !codigo) {
+                alert("Completa todos los campos obligatorios.");
+                return;
+            }
+
+            try {
+                await addDoc(collection(db, "equipos"), {
+                    nombre,
+                    categoria,
+                    codigo,
+                    descripcion,
+                    estado: "disponible",
+                    creadoPor: usuarioActual.uid,
+                    creadoEn: serverTimestamp()
+                });
+
+                form.reset();
+            } catch (error) {
+                console.error(error);
+                alert("Error al guardar el equipo.");
+            }
+        });
+
+        // Escuchar cambios en la colección de equipos en tiempo real
+        function escucharEquipos() {
+            onSnapshot(collection(db, "equipos"), (snapshot) => {
+                tablaEquipos.innerHTML = "";
+
+                snapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const tr = document.createElement("tr");
+
+                    tr.innerHTML = `
+                        <td>${data.nombre || ""}</td>
+                        <td>${data.categoria || ""}</td>
+                        <td>${data.codigo || ""}</td>
+                        <td>${data.estado || ""}</td>
+                        <td>
+                            <button data-accion="toggle" data-id="${docSnap.id}">
+                                ${data.estado === "disponible" ? "Marcar como prestado" : "Marcar como disponible"}
+                            </button>
+                            <button data-accion="eliminar" data-id="${docSnap.id}">
+                                Eliminar
+                            </button>
+                        </td>
+                    `;
+
+                    tablaEquipos.appendChild(tr);
+                });
+            });
+        }
+
+        // Manejar clics en botones de la tabla (cambiar estado / eliminar)
+        tablaEquipos.addEventListener("click", async (e) => {
+            const btn = e.target.closest("button");
+            if (!btn) return;
+
+            const id = btn.getAttribute("data-id");
+            const accion = btn.getAttribute("data-accion");
+            const ref = doc(db, "equipos", id);
+
+            try {
+                if (accion === "toggle") {
+                    const fila = btn.closest("tr");
+                    const estadoActual = fila.children[3].textContent === "disponible" ? "disponible" : "prestado";
+                    const nuevoEstado = estadoActual === "disponible" ? "prestado" : "disponible";
+                    await updateDoc(ref, { estado: nuevoEstado });
+                } else if (accion === "eliminar") {
+                    if (confirm("¿Seguro que deseas eliminar este equipo?")) {
+                        await deleteDoc(ref);
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                alert("Error al actualizar el equipo.");
+            }
+        });
+    </script>
+</body>
+
+</html>

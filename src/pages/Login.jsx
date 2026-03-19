@@ -23,7 +23,6 @@ function Login() {
             const user = result.user;
             const esAdmin = correosAdmin.includes(user.email);
 
-            // Marcamos al usuario como en línea y guardamos rol
             await setDoc(
                 doc(db, "usuarios", user.uid),
                 {

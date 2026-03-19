@@ -15,9 +15,6 @@ import {
 } from 'firebase/firestore';
 import { app } from '../firebaseConfig';
 
-// En este componente diferenciamos entre:
-// - Admin: puede dar de alta equipos, cambiar estado y eliminar.
-// - Usuario: solo ve el inventario (especialmente cuáles están disponibles).
 function Inventario() {
     const navigate = useNavigate();
 
@@ -32,7 +29,6 @@ function Inventario() {
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // 1) Verificamos sesión y cargamos rol desde "usuarios"
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -53,7 +49,6 @@ function Inventario() {
         return () => unsubscribeAuth();
     }, [auth, db, navigate]);
 
-    // 2) Cargamos todos los equipos (tanto para admin como usuario)
     useEffect(() => {
         if (!usuarioActual) return;
         const unsubscribeEquipos = onSnapshot(collection(db, 'equipos'), (snapshot) => {
@@ -70,7 +65,6 @@ function Inventario() {
 
     const esAdmin = rol === 'admin';
 
-    // 3) Solo admin puede dar de alta
     const guardarEquipo = async (e) => {
         e.preventDefault();
         if (!usuarioActual || !esAdmin) return;
@@ -98,7 +92,6 @@ function Inventario() {
         }
     };
 
-    // 4) Solo admin puede cambiar estado y eliminar
     const cambiarEstado = async (equipo) => {
         if (!esAdmin) return;
         const nuevoEstado = equipo.estado === "disponible" ? "prestado" : "disponible";
@@ -128,7 +121,6 @@ function Inventario() {
             <h2>Inventario de equipos ({esAdmin ? "Vista administrador" : "Vista usuario"})</h2>
             <button onClick={() => navigate('/')}>Volver al inicio</button>
 
-            {/* Formulario solo visible para administradores */}
             {esAdmin && (
                 <section>
                     <h3>Registrar nuevo equipo</h3>
@@ -178,7 +170,6 @@ function Inventario() {
                 </section>
             )}
 
-            {/* Listado: todos pueden verlo, pero solo admin tiene botones de acción */}
             <section>
                 <h3>Listado de equipos</h3>
                 <table border="1" cellPadding="4" cellSpacing="0">

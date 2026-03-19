@@ -16,15 +16,11 @@ import {
     getDoc
 } from 'firebase/firestore';
 import { app } from '../firebaseConfig';
-
-// Este componente ahora soporta dos vistas en una sola pantalla:
-// - Si el usuario es admin: ve TODOS los préstamos y puede aprobar / marcar devueltos / eliminar.
-// - Si es usuario normal: solo puede ver y crear SUS propios préstamos.
 function Prestamos() {
     const navigate = useNavigate();
 
     const [usuarioActual, setUsuarioActual] = useState(null);
-    const [rol, setRol] = useState('usuario'); // "admin" o "usuario"
+    const [rol, setRol] = useState('usuario');
     const [prestamosList, setPrestamosList] = useState([]);
     const [equiposDisponibles, setEquiposDisponibles] = useState([]);
     const [nombreAlumno, setNombreAlumno] = useState('');
@@ -33,8 +29,6 @@ function Prestamos() {
 
     const auth = getAuth(app);
     const db = getFirestore(app);
-
-    // 1) Verificamos autenticación y leemos el rol desde la colección "usuarios"
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -55,11 +49,8 @@ function Prestamos() {
         return () => unsubscribeAuth();
     }, [auth, db, navigate]);
 
-    // 2) Cargamos lista de préstamos y equipos disponibles según el rol
     useEffect(() => {
         if (!usuarioActual) return;
-
-        // Para admin: todos los préstamos. Para usuario: solo los suyos.
         const basePrestamos = collection(db, 'prestamos');
         const qPrestamos = rol === 'admin'
             ? basePrestamos
@@ -73,7 +64,6 @@ function Prestamos() {
             setPrestamosList(lista);
         });
 
-        // Equipos disponibles (misma lógica para ambos roles)
         const qEquipos = query(collection(db, "equipos"), where("estado", "==", "disponible"));
         const unsubscribeEquipos = onSnapshot(qEquipos, (snapshot) => {
             const lista = [];
@@ -89,7 +79,6 @@ function Prestamos() {
         };
     }, [usuarioActual, rol, db]);
 
-    // 3) Usuario solicita un préstamo
     const registrarPrestamo = async (e) => {
         e.preventDefault();
         if (!usuarioActual) return;
@@ -110,11 +99,9 @@ function Prestamos() {
                 matricula: matricula,
                 equipoId: equipoId,
                 equipo: equipoTexto,
-                estado: "Solicitado",       // Nuevo flujo: primero se solicita
+                estado: "Solicitado",
                 creadoEn: serverTimestamp()
             });
-
-            // No cambiamos el estado del equipo todavía; se hará al aprobar.
 
             setNombreAlumno('');
             setMatricula('');
@@ -125,7 +112,6 @@ function Prestamos() {
         }
     };
 
-    // 4) Acciones de ADMIN sobre un préstamo
     const aprobarPrestamo = async (prestamo) => {
         if (prestamo.estado !== "Solicitado") return;
         try {
@@ -172,7 +158,6 @@ function Prestamos() {
             <h2>Préstamos de alumnos ({esAdmin ? "Vista administrador" : "Vista usuario"})</h2>
             <button onClick={() => navigate('/')}>Volver al inicio</button>
 
-            {/* Formulario siempre disponible: el usuario solicita préstamos */}
             <section>
                 <h3>Solicitar nuevo préstamo</h3>
                 <form onSubmit={registrarPrestamo}>
@@ -216,7 +201,6 @@ function Prestamos() {
                 </form>
             </section>
 
-            {/* Lista de préstamos: cambia acciones según rol */}
             <section>
                 <h3>{esAdmin ? "Todos los préstamos" : "Mis préstamos"}</h3>
                 <table>
@@ -269,7 +253,6 @@ function Prestamos() {
                                                 </button>
                                             </>
                                         ) : (
-                                            // Usuario normal: solo ve, sin acciones peligrosas
                                             <span>Sin acciones</span>
                                         )}
                                     </td>

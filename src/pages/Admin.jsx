@@ -25,12 +25,10 @@ function Admin() {
                     navigate('/usuario');
                 } else {
                     setUserName(user.displayName || user.email);
-                    // Marcar este admin como online
                     await updateDoc(ref, {
                         online: true,
                         ultimoActivo: serverTimestamp()
                     });
-                    // Escuchar usuarios en línea
                     const q = query(
                         collection(db, "usuarios"),
                         where("online", "==", true)

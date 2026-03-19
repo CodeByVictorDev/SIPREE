@@ -1,5 +1,5 @@
 import React from 'react';
-import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import MenuPrincipal from './pages/MenuPrincipal';
 import Login from './pages/Login';
 import Inventario from './pages/Inventario';
@@ -9,7 +9,6 @@ import Usuario from './pages/Usuario';
 function App() {
     return (
         <BrowserRouter>
-            {/* Routes decide qué componente mostrar según la URL */}
             <Routes>
                 <Route path="/" element={<MenuPrincipal />} />
                 <Route path="/login" element={<Login />} />

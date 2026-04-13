@@ -50,7 +50,6 @@ function Usuario() {
                 <h3>Acciones disponibles</h3>
                 <button onClick={() => navigate('/usuario/inventario')}>Ver inventario</button>
                 <button onClick={() => navigate('/usuario/prestamos')}>Ver préstamos</button>
-                <button onClick={() => navigate('/usuario')}>Volver al panel usuario</button>
             </section>
             <br /><br />
             <button

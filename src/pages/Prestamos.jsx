@@ -204,64 +204,66 @@ function Prestamos() {
 
             <section>
                 <h3>{esAdmin ? "Todos los préstamos" : "Mis préstamos"}</h3>
-                <table>
-                    <thead>
-                        <tr>
-                            {esAdmin && <th>Usuario</th>}
-                            <th>Nombre</th>
-                            <th>Matrícula</th>
-                            <th>Equipo</th>
-                            <th>Estado</th>
-                            <th>Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {prestamosList.map((prestamo) => {
-                            let claseEstado = "estado-libre";
-                            if (prestamo.estado === "Aprobado") claseEstado = "estado-prestado";
-                            if (prestamo.estado === "Solicitado") claseEstado = "estado-pendiente";
+                <div className="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                {esAdmin && <th>Usuario</th>}
+                                <th>Nombre</th>
+                                <th>Matrícula</th>
+                                <th>Equipo</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {prestamosList.map((prestamo) => {
+                                let claseEstado = "estado-libre";
+                                if (prestamo.estado === "Aprobado") claseEstado = "estado-prestado";
+                                if (prestamo.estado === "Solicitado") claseEstado = "estado-pendiente";
 
-                            return (
-                                <tr key={prestamo.id}>
-                                    {esAdmin && (
-                                        <td>{prestamo.correoUsuario || prestamo.nombreUsuario || ""}</td>
-                                    )}
-                                    <td>{prestamo.nombre || ""}</td>
-                                    <td>{prestamo.matricula || ""}</td>
-                                    <td>{prestamo.equipo || ""}</td>
-                                    <td>
-                                        <span className={`estado-label ${claseEstado}`}>
-                                            {prestamo.estado || "Solicitado"}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {esAdmin ? (
-                                            <>
-                                                <button
-                                                    onClick={() => aprobarPrestamo(prestamo)}
-                                                    disabled={prestamo.estado !== "Solicitado"}
-                                                >
-                                                    Aprobar
-                                                </button>
-                                                <button
-                                                    onClick={() => marcarDevuelto(prestamo)}
-                                                    disabled={prestamo.estado !== "Aprobado"}
-                                                >
-                                                    Marcar devuelto
-                                                </button>
-                                                <button onClick={() => eliminarPrestamo(prestamo)}>
-                                                    Eliminar
-                                                </button>
-                                            </>
-                                        ) : (
-                                            <span>Sin acciones</span>
+                                return (
+                                    <tr key={prestamo.id}>
+                                        {esAdmin && (
+                                            <td>{prestamo.correoUsuario || prestamo.nombreUsuario || ""}</td>
                                         )}
-                                    </td>
-                                </tr>
-                            );
-                        })}
-                    </tbody>
-                </table>
+                                        <td>{prestamo.nombre || ""}</td>
+                                        <td>{prestamo.matricula || ""}</td>
+                                        <td>{prestamo.equipo || ""}</td>
+                                        <td>
+                                            <span className={`estado-label ${claseEstado}`}>
+                                                {prestamo.estado || "Solicitado"}
+                                            </span>
+                                        </td>
+                                        <td>
+                                            {esAdmin ? (
+                                                <>
+                                                    <button
+                                                        onClick={() => aprobarPrestamo(prestamo)}
+                                                        disabled={prestamo.estado !== "Solicitado"}
+                                                    >
+                                                        Aprobar
+                                                    </button>
+                                                    <button
+                                                        onClick={() => marcarDevuelto(prestamo)}
+                                                        disabled={prestamo.estado !== "Aprobado"}
+                                                    >
+                                                        Marcar devuelto
+                                                    </button>
+                                                    <button onClick={() => eliminarPrestamo(prestamo)}>
+                                                        Eliminar
+                                                    </button>
+                                                </>
+                                            ) : (
+                                                <span>Sin acciones</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
             </section>
         </div>
     );

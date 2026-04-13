@@ -42,6 +42,7 @@ function Login() {
             }
         } catch (error) {
             console.error(error);
+            alert("Error al iniciar sesión: " + error.message);
         }
     };
 

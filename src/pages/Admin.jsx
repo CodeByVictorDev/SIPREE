@@ -89,7 +89,6 @@ function Admin() {
                 <h3>Acciones de administración</h3>
                 <button onClick={() => navigate('/admin/inventario')}>Administrar inventario</button>
                 <button onClick={() => navigate('/admin/prestamos')}>Administrar préstamos</button>
-                <button onClick={() => navigate('/admin')}>Volver al panel admin</button>
             </section>
 
             <section>

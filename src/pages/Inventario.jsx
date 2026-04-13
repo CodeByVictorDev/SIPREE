@@ -173,39 +173,41 @@ function Inventario() {
 
             <section>
                 <h3>Listado de equipos</h3>
-                <table border="1" cellPadding="4" cellSpacing="0">
-                    <thead>
-                        <tr>
-                            <th>Nombre</th>
-                            <th>Categoría</th>
-                            <th>Código</th>
-                            <th>Estado</th>
-                            {esAdmin && <th>Acciones</th>}
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {equipos.map((equipo) => (
-                            <tr key={equipo.id}>
-                                <td>{equipo.nombre || ""}</td>
-                                <td>{equipo.categoria || ""}</td>
-                                <td>{equipo.codigo || ""}</td>
-                                <td>{equipo.estado || ""}</td>
-                                {esAdmin && (
-                                    <td>
-                                        <button onClick={() => cambiarEstado(equipo)}>
-                                            {equipo.estado === "disponible"
-                                                ? "Marcar como prestado"
-                                                : "Marcar como disponible"}
-                                        </button>
-                                        <button onClick={() => eliminarEquipo(equipo.id)}>
-                                            Eliminar
-                                        </button>
-                                    </td>
-                                )}
+                <div className="table-responsive">
+                    <table border="1" cellPadding="4" cellSpacing="0">
+                        <thead>
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Categoría</th>
+                                <th>Código</th>
+                                <th>Estado</th>
+                                {esAdmin && <th>Acciones</th>}
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody>
+                            {equipos.map((equipo) => (
+                                <tr key={equipo.id}>
+                                    <td>{equipo.nombre || ""}</td>
+                                    <td>{equipo.categoria || ""}</td>
+                                    <td>{equipo.codigo || ""}</td>
+                                    <td>{equipo.estado || ""}</td>
+                                    {esAdmin && (
+                                        <td>
+                                            <button onClick={() => cambiarEstado(equipo)}>
+                                                {equipo.estado === "disponible"
+                                                    ? "Marcar como prestado"
+                                                    : "Marcar como disponible"}
+                                            </button>
+                                            <button onClick={() => eliminarEquipo(equipo.id)}>
+                                                Eliminar
+                                            </button>
+                                        </td>
+                                    )}
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
             </section>
         </div>
     );

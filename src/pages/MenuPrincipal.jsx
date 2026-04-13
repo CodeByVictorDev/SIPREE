@@ -46,8 +46,8 @@ function MenuPrincipal() {
         <div>
             <h2>Bienvenido, {userName}</h2>
             <div>
-                <button onClick={() => navigate('/prestamos')}>Préstamos</button>
-                <button onClick={() => navigate('/inventario')}>Inventario</button>
+                <button onClick={() => navigate('/usuario/prestamos')}>Préstamos</button>
+                <button onClick={() => navigate('/usuario/inventario')}>Inventario</button>
             </div>
             <br /><br />
             <button

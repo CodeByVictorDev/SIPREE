@@ -152,11 +152,12 @@ function Prestamos() {
     };
 
     const esAdmin = rol === 'admin';
+    const panelRuta = esAdmin ? '/admin' : '/usuario';
 
     return (
         <div>
             <h2>Préstamos de alumnos ({esAdmin ? "Vista administrador" : "Vista usuario"})</h2>
-            <button onClick={() => navigate('/')}>Volver al inicio</button>
+            <button onClick={() => navigate(panelRuta)}>Volver al panel</button>
 
             <section>
                 <h3>Solicitar nuevo préstamo</h3>

@@ -64,6 +64,7 @@ function Inventario() {
     }, [usuarioActual, db]);
 
     const esAdmin = rol === 'admin';
+    const panelRuta = esAdmin ? '/admin' : '/usuario';
 
     const guardarEquipo = async (e) => {
         e.preventDefault();
@@ -119,7 +120,7 @@ function Inventario() {
     return (
         <div>
             <h2>Inventario de equipos ({esAdmin ? "Vista administrador" : "Vista usuario"})</h2>
-            <button onClick={() => navigate('/')}>Volver al inicio</button>
+            <button onClick={() => navigate(panelRuta)}>Volver al panel</button>
 
             {esAdmin && (
                 <section>

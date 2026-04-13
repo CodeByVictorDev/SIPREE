@@ -3,6 +3,13 @@ import { useNavigate } from 'react-router-dom';
 import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { getFirestore, doc, getDoc, collection, onSnapshot, query, where, updateDoc, serverTimestamp } from "firebase/firestore";
 import { app } from '../firebaseConfig';
+
+const correosAdmin = [
+    "limok401@gmail.com",
+    "obedmoren02106@gmail.com",
+    "victorchavez02125@gmail.com",
+    "srjuanito30@gmail.com"
+];
 function Admin() {
     const navigate = useNavigate();
     const auth = getAuth(app);
@@ -21,9 +28,18 @@ function Admin() {
                 const ref = doc(db, "usuarios", user.uid);
                 const snap = await getDoc(ref);
                 const data = snap.data();
+                const emailEsAdmin = correosAdmin.includes(user.email);
                 if (!data || data.rol !== "admin") {
-                    navigate('/usuario');
-                } else {
+                    if (emailEsAdmin) {
+                        await updateDoc(ref, {
+                            rol: "admin"
+                        });
+                    } else {
+                        navigate('/usuario');
+                        return;
+                    }
+                }
+                {
                     setUserName(user.displayName || user.email);
                     await updateDoc(ref, {
                         online: true,
@@ -71,9 +87,9 @@ function Admin() {
 
             <section>
                 <h3>Acciones de administración</h3>
-                <button onClick={() => navigate('/inventario')}>Administrar inventario</button>
-                <button onClick={() => navigate('/prestamos')}>Administrar préstamos</button>
-                <button onClick={() => navigate('/')}>Volver al menú principal</button>
+                <button onClick={() => navigate('/admin/inventario')}>Administrar inventario</button>
+                <button onClick={() => navigate('/admin/prestamos')}>Administrar préstamos</button>
+                <button onClick={() => navigate('/admin')}>Volver al panel admin</button>
             </section>
 
             <section>

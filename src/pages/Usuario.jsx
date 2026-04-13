@@ -48,9 +48,9 @@ function Usuario() {
             <p>Desde aquí puedes consultar el inventario y los préstamos registrados.</p>
             <section>
                 <h3>Acciones disponibles</h3>
-                <button onClick={() => navigate('/inventario')}>Ver inventario</button>
-                <button onClick={() => navigate('/prestamos')}>Ver préstamos</button>
-                <button onClick={() => navigate('/')}>Volver al menú principal</button>
+                <button onClick={() => navigate('/usuario/inventario')}>Ver inventario</button>
+                <button onClick={() => navigate('/usuario/prestamos')}>Ver préstamos</button>
+                <button onClick={() => navigate('/usuario')}>Volver al panel usuario</button>
             </section>
             <br /><br />
             <button

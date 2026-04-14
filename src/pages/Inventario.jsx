@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -29,6 +28,7 @@ function Inventario() {
     const auth = getAuth(app);
     const db = getFirestore(app);
 
+    // Escucha si el usuario está autenticado y obtiene su rol
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -36,8 +36,7 @@ function Inventario() {
             } else {
                 setUsuarioActual(user);
                 try {
-                    const ref = doc(db, "usuarios", user.uid);
-                    const snap = await getDoc(ref);
+                    const snap = await getDoc(doc(db, 'usuarios', user.uid));
                     const data = snap.data();
                     setRol(data?.rol === 'admin' ? 'admin' : 'usuario');
                 } catch (e) {
@@ -49,37 +48,35 @@ function Inventario() {
         return () => unsubscribeAuth();
     }, [auth, db, navigate]);
 
+    // Carga todos los equipos en tiempo real desde Firestore
     useEffect(() => {
         if (!usuarioActual) return;
-        const unsubscribeEquipos = onSnapshot(collection(db, 'equipos'), (snapshot) => {
+        const unsubEquipos = onSnapshot(collection(db, 'equipos'), (snapshot) => {
             const lista = [];
-            snapshot.forEach((docSnap) => {
-                lista.push({ id: docSnap.id, ...docSnap.data() });
-            });
+            snapshot.forEach((docSnap) => lista.push({ id: docSnap.id, ...docSnap.data() }));
             setEquipos(lista);
         });
-        return () => {
-            unsubscribeEquipos();
-        };
+        return () => unsubEquipos();
     }, [usuarioActual, db]);
 
     const esAdmin = rol === 'admin';
     const panelRuta = esAdmin ? '/admin' : '/usuario';
 
+    // Guarda un nuevo equipo en Firestore
     const guardarEquipo = async (e) => {
         e.preventDefault();
         if (!usuarioActual || !esAdmin) return;
         if (!nombre || !categoria || !codigo) {
-            alert("Completa todos los campos obligatorios.");
+            alert('Completa todos los campos obligatorios.');
             return;
         }
         try {
-            await addDoc(collection(db, "equipos"), {
+            await addDoc(collection(db, 'equipos'), {
                 nombre,
                 categoria,
                 codigo,
                 descripcion,
-                estado: "disponible",
+                estado: 'disponible',
                 creadoPor: usuarioActual.uid,
                 creadoEn: serverTimestamp()
             });
@@ -89,37 +86,38 @@ function Inventario() {
             setDescripcion('');
         } catch (error) {
             console.error(error);
-            alert("Error al guardar el equipo.");
+            alert('Error al guardar el equipo.');
         }
     };
 
+    // Alterna el estado del equipo entre disponible y prestado
     const cambiarEstado = async (equipo) => {
         if (!esAdmin) return;
-        const nuevoEstado = equipo.estado === "disponible" ? "prestado" : "disponible";
-        const ref = doc(db, "equipos", equipo.id);
+        const nuevoEstado = equipo.estado === 'disponible' ? 'prestado' : 'disponible';
         try {
-            await updateDoc(ref, { estado: nuevoEstado });
+            await updateDoc(doc(db, 'equipos', equipo.id), { estado: nuevoEstado });
         } catch (error) {
             console.error(error);
-            alert("Error al actualizar el equipo.");
+            alert('Error al actualizar el equipo.');
         }
     };
 
+    // Elimina un equipo de Firestore
     const eliminarEquipo = async (id) => {
         if (!esAdmin) return;
-        if (window.confirm("¿Seguro que deseas eliminar este equipo?")) {
+        if (window.confirm('¿Seguro que deseas eliminar este equipo?')) {
             try {
-                await deleteDoc(doc(db, "equipos", id));
+                await deleteDoc(doc(db, 'equipos', id));
             } catch (error) {
                 console.error(error);
-                alert("Error al eliminar el equipo.");
+                alert('Error al eliminar el equipo.');
             }
         }
     };
 
     return (
         <div>
-            <h2>Inventario de equipos ({esAdmin ? "Vista administrador" : "Vista usuario"})</h2>
+            <h2>Inventario de equipos</h2>
             <button onClick={() => navigate(panelRuta)}>Volver al panel</button>
 
             {esAdmin && (
@@ -174,7 +172,7 @@ function Inventario() {
             <section>
                 <h3>Listado de equipos</h3>
                 <div className="table-responsive">
-                    <table border="1" cellPadding="4" cellSpacing="0">
+                    <table>
                         <thead>
                             <tr>
                                 <th>Nombre</th>
@@ -187,16 +185,20 @@ function Inventario() {
                         <tbody>
                             {equipos.map((equipo) => (
                                 <tr key={equipo.id}>
-                                    <td>{equipo.nombre || ""}</td>
-                                    <td>{equipo.categoria || ""}</td>
-                                    <td>{equipo.codigo || ""}</td>
-                                    <td>{equipo.estado || ""}</td>
+                                    <td>{equipo.nombre || ''}</td>
+                                    <td>{equipo.categoria || ''}</td>
+                                    <td>{equipo.codigo || ''}</td>
+                                    <td>
+                                        <span className={`estado-label ${equipo.estado === 'disponible' ? 'estado-libre' : 'estado-prestado'}`}>
+                                            {equipo.estado || ''}
+                                        </span>
+                                    </td>
                                     {esAdmin && (
                                         <td>
                                             <button onClick={() => cambiarEstado(equipo)}>
-                                                {equipo.estado === "disponible"
-                                                    ? "Marcar como prestado"
-                                                    : "Marcar como disponible"}
+                                                {equipo.estado === 'disponible'
+                                                    ? 'Marcar prestado'
+                                                    : 'Marcar disponible'}
                                             </button>
                                             <button onClick={() => eliminarEquipo(equipo.id)}>
                                                 Eliminar

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getAuth, onAuthStateChanged } from 'firebase/auth';
@@ -16,6 +15,7 @@ import {
     getDoc
 } from 'firebase/firestore';
 import { app } from '../firebaseConfig';
+
 function Prestamos() {
     const navigate = useNavigate();
 
@@ -29,6 +29,8 @@ function Prestamos() {
 
     const auth = getAuth(app);
     const db = getFirestore(app);
+
+    // Escucha si el usuario está autenticado y obtiene su rol
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -36,8 +38,7 @@ function Prestamos() {
             } else {
                 setUsuarioActual(user);
                 try {
-                    const ref = doc(db, "usuarios", user.uid);
-                    const snap = await getDoc(ref);
+                    const snap = await getDoc(doc(db, 'usuarios', user.uid));
                     const data = snap.data();
                     setRol(data?.rol === 'admin' ? 'admin' : 'usuario');
                 } catch (e) {
@@ -49,105 +50,108 @@ function Prestamos() {
         return () => unsubscribeAuth();
     }, [auth, db, navigate]);
 
+    // Carga los préstamos y equipos disponibles en tiempo real
     useEffect(() => {
         if (!usuarioActual) return;
+
         const basePrestamos = collection(db, 'prestamos');
         const qPrestamos = rol === 'admin'
             ? basePrestamos
             : query(basePrestamos, where('usuarioId', '==', usuarioActual.uid));
 
-        const unsubscribePrestamos = onSnapshot(qPrestamos, (snapshot) => {
+        const unsubPrestamos = onSnapshot(qPrestamos, (snapshot) => {
             const lista = [];
-            snapshot.forEach((docSnap) => {
-                lista.push({ id: docSnap.id, ...docSnap.data() });
-            });
+            snapshot.forEach((docSnap) => lista.push({ id: docSnap.id, ...docSnap.data() }));
             setPrestamosList(lista);
         });
 
-        const qEquipos = query(collection(db, "equipos"), where("estado", "==", "disponible"));
-        const unsubscribeEquipos = onSnapshot(qEquipos, (snapshot) => {
+        const qEquipos = query(collection(db, 'equipos'), where('estado', '==', 'disponible'));
+        const unsubEquipos = onSnapshot(qEquipos, (snapshot) => {
             const lista = [];
-            snapshot.forEach((docSnap) => {
-                lista.push({ id: docSnap.id, ...docSnap.data() });
-            });
+            snapshot.forEach((docSnap) => lista.push({ id: docSnap.id, ...docSnap.data() }));
             setEquiposDisponibles(lista);
         });
 
         return () => {
-            unsubscribePrestamos();
-            unsubscribeEquipos();
+            unsubPrestamos();
+            unsubEquipos();
         };
     }, [usuarioActual, rol, db]);
 
+    // Registra un nuevo préstamo en Firestore
     const registrarPrestamo = async (e) => {
         e.preventDefault();
         if (!usuarioActual) return;
         if (!nombreAlumno || !matricula || !equipoId) {
-            alert("Completa todos los campos.");
+            alert('Completa todos los campos.');
             return;
         }
 
-        const equipoEncontrado = equiposDisponibles.find(eq => eq.id === equipoId);
-        const equipoTexto = equipoEncontrado ? `${equipoEncontrado.nombre} (${equipoEncontrado.codigo})` : "";
+        const equipoEncontrado = equiposDisponibles.find((eq) => eq.id === equipoId);
+        const equipoTexto = equipoEncontrado
+            ? `${equipoEncontrado.nombre} (${equipoEncontrado.codigo})`
+            : '';
 
         try {
-            await addDoc(collection(db, "prestamos"), {
+            await addDoc(collection(db, 'prestamos'), {
                 usuarioId: usuarioActual.uid,
                 nombreUsuario: usuarioActual.displayName || '',
                 correoUsuario: usuarioActual.email || '',
                 nombre: nombreAlumno,
-                matricula: matricula,
-                equipoId: equipoId,
+                matricula,
+                equipoId,
                 equipo: equipoTexto,
-                estado: "Solicitado",
+                estado: 'Solicitado',
                 creadoEn: serverTimestamp()
             });
-
             setNombreAlumno('');
             setMatricula('');
             setEquipoId('');
         } catch (error) {
             console.error(error);
-            alert("Error al registrar el préstamo.");
+            alert('Error al registrar el préstamo.');
         }
     };
 
+    // Aprueba un préstamo y marca el equipo como prestado
     const aprobarPrestamo = async (prestamo) => {
-        if (prestamo.estado !== "Solicitado") return;
+        if (prestamo.estado !== 'Solicitado') return;
         try {
-            await updateDoc(doc(db, "prestamos", prestamo.id), { estado: "Aprobado" });
+            await updateDoc(doc(db, 'prestamos', prestamo.id), { estado: 'Aprobado' });
             if (prestamo.equipoId) {
-                await updateDoc(doc(db, "equipos", prestamo.equipoId), { estado: "prestado" });
+                await updateDoc(doc(db, 'equipos', prestamo.equipoId), { estado: 'prestado' });
             }
         } catch (error) {
             console.error(error);
-            alert("Error al aprobar el préstamo.");
+            alert('Error al aprobar el préstamo.');
         }
     };
 
+    // Marca un préstamo como devuelto y libera el equipo
     const marcarDevuelto = async (prestamo) => {
-        if (prestamo.estado !== "Aprobado") return;
+        if (prestamo.estado !== 'Aprobado') return;
         try {
-            await updateDoc(doc(db, "prestamos", prestamo.id), { estado: "Devuelto" });
+            await updateDoc(doc(db, 'prestamos', prestamo.id), { estado: 'Devuelto' });
             if (prestamo.equipoId) {
-                await updateDoc(doc(db, "equipos", prestamo.equipoId), { estado: "disponible" });
+                await updateDoc(doc(db, 'equipos', prestamo.equipoId), { estado: 'disponible' });
             }
         } catch (error) {
             console.error(error);
-            alert("Error al marcar como devuelto.");
+            alert('Error al marcar como devuelto.');
         }
     };
 
+    // Elimina un préstamo de Firestore
     const eliminarPrestamo = async (prestamo) => {
-        if (!window.confirm("¿Seguro que deseas eliminar este préstamo?")) return;
+        if (!window.confirm('¿Seguro que deseas eliminar este préstamo?')) return;
         try {
-            await deleteDoc(doc(db, "prestamos", prestamo.id));
-            if (prestamo.equipoId && prestamo.estado === "Aprobado") {
-                await updateDoc(doc(db, "equipos", prestamo.equipoId), { estado: "disponible" });
+            await deleteDoc(doc(db, 'prestamos', prestamo.id));
+            if (prestamo.equipoId && prestamo.estado === 'Aprobado') {
+                await updateDoc(doc(db, 'equipos', prestamo.equipoId), { estado: 'disponible' });
             }
         } catch (error) {
             console.error(error);
-            alert("Error al eliminar el préstamo.");
+            alert('Error al eliminar el préstamo.');
         }
     };
 
@@ -156,7 +160,7 @@ function Prestamos() {
 
     return (
         <div>
-            <h2>Préstamos de alumnos ({esAdmin ? "Vista administrador" : "Vista usuario"})</h2>
+            <h2>Préstamos de alumnos</h2>
             <button onClick={() => navigate(panelRuta)}>Volver al panel</button>
 
             <section>
@@ -192,7 +196,7 @@ function Prestamos() {
                             <option value="">Selecciona un equipo disponible</option>
                             {equiposDisponibles.map((eq) => (
                                 <option key={eq.id} value={eq.id}>
-                                    {eq.nombre || "Sin nombre"} ({eq.codigo || ""})
+                                    {eq.nombre || 'Sin nombre'} ({eq.codigo || ''})
                                 </option>
                             ))}
                         </select>
@@ -203,59 +207,80 @@ function Prestamos() {
             </section>
 
             <section>
-                <h3>{esAdmin ? "Todos los préstamos" : "Mis préstamos"}</h3>
+                <h3>{esAdmin ? 'Todos los préstamos' : 'Mis préstamos'}</h3>
                 <div className="table-responsive">
                     <table>
                         <thead>
                             <tr>
-                                {esAdmin && <th>Usuario</th>}
-                                <th>Nombre</th>
-                                <th>Matrícula</th>
-                                <th>Equipo</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
+                                {esAdmin && <th className="col-correo">Usuario</th>}
+                                <th className="col-nombre">Nombre</th>
+                                <th className="col-matricula">Matrícula</th>
+                                <th className="col-equipo">Equipo</th>
+                                <th className="col-estado">Estado</th>
+                                <th className="col-acciones">Acciones</th>
                             </tr>
                         </thead>
                         <tbody>
                             {prestamosList.map((prestamo) => {
-                                let claseEstado = "estado-libre";
-                                if (prestamo.estado === "Aprobado") claseEstado = "estado-prestado";
-                                if (prestamo.estado === "Solicitado") claseEstado = "estado-pendiente";
+                                let claseEstado = 'estado-libre';
+                                if (prestamo.estado === 'Aprobado') claseEstado = 'estado-prestado';
+                                if (prestamo.estado === 'Solicitado') claseEstado = 'estado-pendiente';
 
                                 return (
                                     <tr key={prestamo.id}>
                                         {esAdmin && (
-                                            <td>{prestamo.correoUsuario || prestamo.nombreUsuario || ""}</td>
+                                            <td className="col-correo">
+                                                <span
+                                                    className="texto-recortado"
+                                                    title={prestamo.correoUsuario || prestamo.nombreUsuario || ''}
+                                                >
+                                                    {prestamo.correoUsuario || prestamo.nombreUsuario || ''}
+                                                </span>
+                                            </td>
                                         )}
-                                        <td>{prestamo.nombre || ""}</td>
-                                        <td>{prestamo.matricula || ""}</td>
-                                        <td>{prestamo.equipo || ""}</td>
-                                        <td>
-                                            <span className={`estado-label ${claseEstado}`}>
-                                                {prestamo.estado || "Solicitado"}
+                                        <td className="col-nombre">{prestamo.nombre || ''}</td>
+                                        <td className="col-matricula">
+                                            <span
+                                                className="texto-recortado"
+                                                title={prestamo.matricula || ''}
+                                            >
+                                                {prestamo.matricula || ''}
                                             </span>
                                         </td>
-                                        <td>
+                                        <td className="col-equipo">
+                                            <span
+                                                className="texto-recortado"
+                                                title={prestamo.equipo || ''}
+                                            >
+                                                {prestamo.equipo || ''}
+                                            </span>
+                                        </td>
+                                        <td className="col-estado">
+                                            <span className={`estado-label ${claseEstado}`}>
+                                                {prestamo.estado || 'Solicitado'}
+                                            </span>
+                                        </td>
+                                        <td className="col-acciones">
                                             {esAdmin ? (
                                                 <>
                                                     <button
                                                         onClick={() => aprobarPrestamo(prestamo)}
-                                                        disabled={prestamo.estado !== "Solicitado"}
+                                                        disabled={prestamo.estado !== 'Solicitado'}
                                                     >
                                                         Aprobar
                                                     </button>
                                                     <button
                                                         onClick={() => marcarDevuelto(prestamo)}
-                                                        disabled={prestamo.estado !== "Aprobado"}
+                                                        disabled={prestamo.estado !== 'Aprobado'}
                                                     >
-                                                        Marcar devuelto
+                                                        Devuelto
                                                     </button>
                                                     <button onClick={() => eliminarPrestamo(prestamo)}>
                                                         Eliminar
                                                     </button>
                                                 </>
                                             ) : (
-                                                <span>Sin acciones</span>
+                                                <span>—</span>
                                             )}
                                         </td>
                                     </tr>

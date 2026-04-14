@@ -19,7 +19,7 @@ h3 {
 }
 
 #root {
-    max-width: 900px;
+    max-width: 1200px;
     margin: 1rem auto;
     padding: 1rem 1.5rem;
     width: 100%;
@@ -101,23 +101,18 @@ button:disabled {
 }
 
 table button {
-    margin-right: 0.4rem;
-    padding: 0.4rem 0.8rem;
-    font-size: 0.85rem;
+    margin: 0.2rem;
+    padding: 0.35rem 0.7rem;
+    font-size: 0.8rem;
     border-radius: 6px;
     box-shadow: none;
 }
 
-button[onclick*="/"],
-button[onclick*="Index"] {
-    background-color: #334155;
-    color: #f8fafc;
-    box-shadow: none;
-}
+/* ── Tabla general ── */
 
-button[onclick*="/"]:hover,
-button[onclick*="Index"]:hover {
-    background-color: #475569;
+.table-responsive {
+    overflow-x: auto;
+    width: 100%;
 }
 
 table {
@@ -129,6 +124,7 @@ table {
     overflow: hidden;
     border: 1px solid #334155;
     margin-top: 1rem;
+    table-layout: fixed;
 }
 
 thead {
@@ -137,17 +133,19 @@ thead {
 
 th,
 td {
-    padding: 1rem;
+    padding: 0.75rem 0.6rem;
     text-align: left;
-    font-size: 0.95rem;
+    font-size: 0.88rem;
     border-bottom: 1px solid #334155;
+    overflow: hidden;
+    white-space: nowrap;
 }
 
 th {
     font-weight: 600;
     color: #94a3b8;
     text-transform: uppercase;
-    font-size: 0.8rem;
+    font-size: 0.75rem;
     letter-spacing: 0.05em;
 }
 
@@ -167,14 +165,37 @@ tbody tr:hover {
     background-color: #334155;
 }
 
+/* ── Anchos específicos de columnas en la tabla de préstamos ── */
+
+.col-correo  { width: 18%; }
+.col-nombre  { width: 16%; }
+.col-matricula { width: 10%; }
+.col-equipo  { width: 22%; }
+.col-estado  { width: 10%; }
+.col-acciones { width: 24%; }
+
+/* ── Texto con ellipsis y tooltip nativo ── */
+
+.texto-recortado {
+    display: block;
+    max-width: 100%;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    cursor: default;
+}
+
+/* ── Badges de estado ── */
+
 .estado-label {
     display: inline-block;
-    padding: 0.25rem 0.75rem;
+    padding: 0.2rem 0.6rem;
     border-radius: 999px;
-    font-size: 0.75rem;
+    font-size: 0.72rem;
     font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 0.05em;
+    white-space: nowrap;
 }
 
 .estado-prestado {
@@ -188,6 +209,14 @@ tbody tr:hover {
     color: #6ee7b7;
     border: 1px solid rgba(16, 185, 129, 0.3);
 }
+
+.estado-pendiente {
+    background-color: rgba(234, 179, 8, 0.15);
+    color: #fde68a;
+    border: 1px solid rgba(234, 179, 8, 0.3);
+}
+
+/* ── Página de login ── */
 
 .login-page {
     display: flex;
@@ -219,25 +248,22 @@ tbody tr:hover {
     box-shadow: 0 6px 8px -1px rgba(255, 255, 255, 0.15);
 }
 
-#root>div,
+/* ── Centrado general ── */
+
+#root > div,
 section {
     text-align: center;
 }
 
 form,
 table,
-section>p,
-section>h3 {
+section > p,
+section > h3 {
     text-align: left;
 }
 
-section>h3 {
+section > h3 {
     width: 100%;
     margin-bottom: 1.5rem;
     text-align: center;
 }
-
-.table-responsive {
-    overflow-x: auto;
-    width: 100%;
-}

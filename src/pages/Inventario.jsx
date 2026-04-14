@@ -28,7 +28,6 @@ function Inventario() {
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Escucha si el usuario está autenticado y obtiene su rol
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -48,7 +47,6 @@ function Inventario() {
         return () => unsubscribeAuth();
     }, [auth, db, navigate]);
 
-    // Carga todos los equipos en tiempo real desde Firestore
     useEffect(() => {
         if (!usuarioActual) return;
         const unsubEquipos = onSnapshot(collection(db, 'equipos'), (snapshot) => {
@@ -62,7 +60,6 @@ function Inventario() {
     const esAdmin = rol === 'admin';
     const panelRuta = esAdmin ? '/admin' : '/usuario';
 
-    // Guarda un nuevo equipo en Firestore
     const guardarEquipo = async (e) => {
         e.preventDefault();
         if (!usuarioActual || !esAdmin) return;
@@ -90,7 +87,6 @@ function Inventario() {
         }
     };
 
-    // Alterna el estado del equipo entre disponible y prestado
     const cambiarEstado = async (equipo) => {
         if (!esAdmin) return;
         const nuevoEstado = equipo.estado === 'disponible' ? 'prestado' : 'disponible';
@@ -102,7 +98,6 @@ function Inventario() {
         }
     };
 
-    // Elimina un equipo de Firestore
     const eliminarEquipo = async (id) => {
         if (!esAdmin) return;
         if (window.confirm('¿Seguro que deseas eliminar este equipo?')) {

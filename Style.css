@@ -108,7 +108,6 @@ table button {
     box-shadow: none;
 }
 
-/* ── Tabla general ── */
 
 .table-responsive {
     overflow-x: auto;
@@ -165,7 +164,6 @@ tbody tr:hover {
     background-color: #334155;
 }
 
-/* ── Anchos específicos de columnas en la tabla de préstamos ── */
 
 .col-correo  { width: 18%; }
 .col-nombre  { width: 16%; }
@@ -174,7 +172,6 @@ tbody tr:hover {
 .col-estado  { width: 10%; }
 .col-acciones { width: 24%; }
 
-/* ── Texto con ellipsis y tooltip nativo ── */
 
 .texto-recortado {
     display: block;
@@ -185,7 +182,6 @@ tbody tr:hover {
     cursor: default;
 }
 
-/* ── Badges de estado ── */
 
 .estado-label {
     display: inline-block;
@@ -216,7 +212,6 @@ tbody tr:hover {
     border: 1px solid rgba(234, 179, 8, 0.3);
 }
 
-/* ── Página de login ── */
 
 .login-page {
     display: flex;
@@ -248,7 +243,6 @@ tbody tr:hover {
     box-shadow: 0 6px 8px -1px rgba(255, 255, 255, 0.15);
 }
 
-/* ── Centrado general ── */
 
 #root > div,
 section {

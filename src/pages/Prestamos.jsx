@@ -30,7 +30,6 @@ function Prestamos() {
     const auth = getAuth(app);
     const db = getFirestore(app);
 
-    // Escucha si el usuario está autenticado y obtiene su rol
     useEffect(() => {
         const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
             if (!user) {
@@ -50,7 +49,6 @@ function Prestamos() {
         return () => unsubscribeAuth();
     }, [auth, db, navigate]);
 
-    // Carga los préstamos y equipos disponibles en tiempo real
     useEffect(() => {
         if (!usuarioActual) return;
 
@@ -78,7 +76,6 @@ function Prestamos() {
         };
     }, [usuarioActual, rol, db]);
 
-    // Registra un nuevo préstamo en Firestore
     const registrarPrestamo = async (e) => {
         e.preventDefault();
         if (!usuarioActual) return;
@@ -113,7 +110,6 @@ function Prestamos() {
         }
     };
 
-    // Aprueba un préstamo y marca el equipo como prestado
     const aprobarPrestamo = async (prestamo) => {
         if (prestamo.estado !== 'Solicitado') return;
         try {
@@ -127,7 +123,6 @@ function Prestamos() {
         }
     };
 
-    // Marca un préstamo como devuelto y libera el equipo
     const marcarDevuelto = async (prestamo) => {
         if (prestamo.estado !== 'Aprobado') return;
         try {
@@ -141,7 +136,6 @@ function Prestamos() {
         }
     };
 
-    // Elimina un préstamo de Firestore
     const eliminarPrestamo = async (prestamo) => {
         if (!window.confirm('¿Seguro que deseas eliminar este préstamo?')) return;
         try {

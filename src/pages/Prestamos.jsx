@@ -1,53 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { getAuth, onAuthStateChanged } from 'firebase/auth';
-import {
-    getFirestore,
-    collection,
-    addDoc,
-    onSnapshot,
-    doc,
-    updateDoc,
-    deleteDoc,
-    serverTimestamp,
-    query,
-    where,
-    getDoc
-} from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, doc, updateDoc, deleteDoc, serverTimestamp, query, where } from 'firebase/firestore';
 import { app } from '../firebaseConfig';
+import { useAuth } from '../hooks/useAuth';
+import AppLayout from '../components/Layout/AppLayout';
+import StatusBadge from '../components/ui/StatusBadge';
 
 function Prestamos() {
-    const navigate = useNavigate();
+    const { user: usuarioActual, rol } = useAuth();
+    const db = getFirestore(app);
 
-    const [usuarioActual, setUsuarioActual] = useState(null);
-    const [rol, setRol] = useState('usuario');
     const [prestamosList, setPrestamosList] = useState([]);
     const [equiposDisponibles, setEquiposDisponibles] = useState([]);
     const [nombreAlumno, setNombreAlumno] = useState('');
     const [matricula, setMatricula] = useState('');
     const [equipoId, setEquipoId] = useState('');
-
-    const auth = getAuth(app);
-    const db = getFirestore(app);
-
-    useEffect(() => {
-        const unsubscribeAuth = onAuthStateChanged(auth, async (user) => {
-            if (!user) {
-                navigate('/login');
-            } else {
-                setUsuarioActual(user);
-                try {
-                    const snap = await getDoc(doc(db, 'usuarios', user.uid));
-                    const data = snap.data();
-                    setRol(data?.rol === 'admin' ? 'admin' : 'usuario');
-                } catch (e) {
-                    console.error(e);
-                    setRol('usuario');
-                }
-            }
-        });
-        return () => unsubscribeAuth();
-    }, [auth, db, navigate]);
 
     useEffect(() => {
         if (!usuarioActual) return;
@@ -150,12 +116,11 @@ function Prestamos() {
     };
 
     const esAdmin = rol === 'admin';
-    const panelRuta = esAdmin ? '/admin' : '/usuario';
+
+    if (!usuarioActual) return null;
 
     return (
-        <div>
-            <h2>Préstamos de alumnos</h2>
-            <button onClick={() => navigate(panelRuta)}>Volver al panel</button>
+        <AppLayout title="Préstamos" subtitle="Gestión de préstamos de equipos" allow={['admin','tecnico','usuario']}>
 
             <section>
                 <h3>Solicitar nuevo préstamo</h3>
@@ -284,7 +249,7 @@ function Prestamos() {
                     </table>
                 </div>
             </section>
-        </div>
+        </AppLayout>
     );
 }
 
